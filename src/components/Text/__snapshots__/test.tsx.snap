@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Text /> should render the Text and match the previous version 1`] = `
+<span
+  class="c-kbxdZX c-kbxdZX-cHtIMp-color-black c-kbxdZX-fAKXXr-size-sm c-kbxdZX-gVAYaD-weight-normal"
+>
+  Label
+</span>
+`;

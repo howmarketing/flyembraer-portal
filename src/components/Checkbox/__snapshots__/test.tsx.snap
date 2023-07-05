@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<CheckBox /> should render the CheckBox and match the previous version 1`] = `
+<div
+  class="c-lctIFO"
+>
+  <input
+    aria-checked="false"
+    aria-required="false"
+    class="c-chkGgc"
+    id="label"
+    name="label"
+    type="checkbox"
+  />
+  <label
+    class="c-kSThZz"
+    for="label"
+  >
+    Label
+  </label>
+</div>
+`;

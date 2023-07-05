@@ -1,0 +1,87 @@
+image: node:10.15.0
+definitions:
+  steps:
+    - step: &docker-build
+        name: Docker Build Dev
+        size: 2x # Memory increase limit
+        image: atlassian/pipelines-awscli
+        script:
+          - export TESTCONTAINERS_RYUK_DISABLED=true
+          - IMAGE="990526799017.dkr.ecr.us-east-2.amazonaws.com/flyembraer-portal-ecr"
+          - docker build -t $IMAGE:${BITBUCKET_COMMIT} --build-arg ENV=development --no-cache .
+        services:
+          - docker
+    - step: &docker-build-dev
+        name: Docker Build Dev
+        size: 2x # Memory increase limit
+        image: atlassian/pipelines-awscli
+        script:
+          - export TESTCONTAINERS_RYUK_DISABLED=true
+          - IMAGE="990526799017.dkr.ecr.us-east-2.amazonaws.com/flyembraer-portal-ecr"
+          - aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}"
+          - aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}"
+          - eval $(aws ecr get-login --no-include-email --region us-east-2 | sed 's;https://;;g')
+          - docker build -t $IMAGE:${BITBUCKET_COMMIT} --build-arg ENV=development --no-cache .
+          - docker push $IMAGE:${BITBUCKET_COMMIT}
+        services:
+          - docker
+    - step: &docker-build-release
+        name: Docker Build Release
+        size: 2x # Memory increase limit
+        image: atlassian/pipelines-awscli
+        script:
+          - export TESTCONTAINERS_RYUK_DISABLED=true
+          - IMAGE="105181441368.dkr.ecr.us-east-1.amazonaws.com/flyembraer-portal-ecr"
+          - aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID_RELEASE}
+          - aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY_RELEASE}
+          - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 105181441368.dkr.ecr.us-east-1.amazonaws.com
+          - docker build -t $IMAGE:${BITBUCKET_COMMIT} --build-arg ENV=staging --no-cache .
+          - docker push $IMAGE:${BITBUCKET_COMMIT}
+        services:
+          - docker
+    - step: &kustomize-dev
+        name: Dev image tag updating
+        script:
+          - git config --global user.email "${GIT_USER_EMAIL}"
+          - git config --global user.name "${GIT_USER_FULLNAME}"
+          - cd ..
+          - git clone git@bitbucket.org:digital_embraer/flyembraer-infra.git
+          - cd flyembraer-infra
+          - chmod +x kustomize
+          - cp kustomize /usr/local/bin/
+          - git remote set-url origin git@bitbucket.org:digital_embraer/flyembraer-infra.git
+          - cd flyembraer-portal/overlays/dev
+          - kustomize edit set image 990526799017.dkr.ecr.us-east-2.amazonaws.com/flyembraer-portal-ecr:${BITBUCKET_COMMIT}
+          - kustomize build .
+          - cd ../../..
+          - git add .
+          - git commit -am "FlyEmbraer-Portal image update"
+          - git push
+    - step: &kustomize-release
+        name: Release image tag updating
+        script:
+          - git config --global user.email "${GIT_USER_EMAIL}"
+          - git config --global user.name "${GIT_USER_FULLNAME}"
+          - cd ..
+          - git clone git@bitbucket.org:digital_embraer/flyembraer-infra.git
+          - cd flyembraer-infra
+          - chmod +x kustomize
+          - cp kustomize /usr/local/bin/
+          - git remote set-url origin git@bitbucket.org:digital_embraer/flyembraer-infra.git
+          - cd flyembraer-portal/overlays/release
+          - kustomize edit set image 105181441368.dkr.ecr.us-east-1.amazonaws.com/flyembraer-portal-ecr:${BITBUCKET_COMMIT}
+          - kustomize build .
+          - cd ../../..
+          - git add .
+          - git commit -am "FlyEmbraer-portal Release image update - Release"
+          - git push
+pipelines:
+  default:
+    - step: *docker-build
+  branches:
+    dev:
+      - step: *docker-build-dev
+      - step: *kustomize-dev
+    release:
+      - step: *docker-build-release
+      - step: *kustomize-release

@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<TextField /> should render the TextField and match the previous version 1`] = `
+<div
+  class="c-fGJxyJ"
+>
+  <label
+    class="c-jwfAEw"
+    for="label"
+  >
+    Label
+  </label>
+  <input
+    aria-invalid="false"
+    aria-required="false"
+    class="c-fsJYtE"
+    id="label"
+    name="label"
+    type="text"
+  />
+</div>
+`;
